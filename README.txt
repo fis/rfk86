@@ -12,7 +12,7 @@
 | To use, trans-re-mogrify the supplied rfk86.86p     |
 | into your calculator by some unspecified means,     |
 | then invoke "Asm(rfk86)" or use some sort of shell. |
-| Use exit (or many other keys) to get past the       |
+| Use clear (or many other keys) to get past the      |
 | introductionary splash screen, the arrow keys to    |
 | move the eponymous, cubical robot, and the "exit"   |
 | key to escape, if the suspense is too much for you. |
