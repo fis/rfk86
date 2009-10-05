@@ -5,8 +5,6 @@
 use strict;
 use warnings;
 
-my $verbose = shift @ARGV;
-
 # define the rfk86 alphabet (to save space in font)
 
 my $alpha = " ABCDEFGHIJKLMNOPQRSTUVWXYZ.,'\"!";
@@ -17,6 +15,17 @@ my @alpha = split //, $alpha;
 
 my %alpha;
 $alpha{$alpha[$_]} = $_ foreach (0 .. $#alpha);
+
+# add-on feature: convert argument strings
+
+while (my $msg = shift @ARGV)
+{
+    chomp $msg;
+    print "\t;; $msg\n";
+    print "\tdb ";
+    print join(', ', map { $alpha{$_} } split //, $msg);
+    print "\n";
+}
 
 # slurp in all the messages
 

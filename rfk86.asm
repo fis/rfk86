@@ -317,6 +317,7 @@ init:
 
 exit:
 
+	call _clrLCD
 	call _runindicon
 
 	pop iy
@@ -493,7 +494,8 @@ hit_object:
 	ret
 
 found_kitten:
-	ret
+	pop af		; get rid of return address
+	jp splash_exit	; show message and quit
 
 
 ;;; ============================
@@ -689,6 +691,7 @@ rand:
 splash:
 	;; copy frame 1 to RAM
 
+	ld de, logo_size
 	ld hl, logo1_data + 4
 	call splash_copy
 
@@ -711,6 +714,7 @@ splash:
 
 	;; copy frame 2 to RAM, write to plot screen
 
+	ld de, logo_size
 	ld hl, logo2_data + 4
 	call splash_copy
 	ld a, 0x41
@@ -742,7 +746,6 @@ splash:
 
 	exx
 	ld bc, $3c00			; $3c           -> ($c0+$3c)*$100 = $fc00; normal LCD
-	;;ld de, $0536			; $3c^$36 = $0a -> ($c0+$0a)*$100 = $ca00; alt. LCD
 	ld de, $0236			; $3c^$36 = $0a -> ($c0+$0a)*$100 = $ca00; alt. LCD
 	ld hl, splash_loop_jump		; used to terminate the loop
 	exx
@@ -777,10 +780,17 @@ splash_loop_jump:
 	ret
 
 
-;;; splash_copy: helper, copies frame from prog+hl to target
+;;; splash_copy: copies image data from non-loaded part of the program
+;;;    in: de - number of bytes to copy
+;;;        hl - offset from start of program
+;;;   out: data copied to $9000
+;;;  mess: a, b, d, e, h, l
 
 splash_copy:
-	;; find the splash screen image
+	xor a
+	ex de, hl			; ahl <- number of bytes
+	call _set_mm_num_bytes		; length:
+	ex de, hl
 
 	push hl
 	ld hl, _asapvar
@@ -796,10 +806,6 @@ splash_copy:
 	ld a, 1
 	ld hl, $1000			; destination: $9000
 	call _set_abs_dest_addr
-
-	xor a
-	ld hl, logo_size
-	call _set_mm_num_bytes		; length: frame size (1024 bytes)
 
 	call _mm_ldir
 
@@ -867,10 +873,66 @@ splash_int:
 
 splash_int_size: equ $ - splash_int
 
+
 ;;; splash variables
 
 splash_save:
 	db 0, 0, 0, 0, 0, 0
+
+splash_exit_row_1:
+	;; You found kitten!
+	db 25, 47, 53, 0, 38, 47, 53, 46, 36, 0, 43, 41, 52, 52, 37, 46, 31
+splash_exit_row_2:
+	;; Way to go, robot!
+	db 23, 33, 57, 0, 52, 47, 0, 39, 47, 28, 0, 50, 47, 34, 47, 52, 31
+
+
+;;; splash_exit: victory splash screen
+
+splash_exit:
+	;; display the celebration message
+
+	call _clrLCD
+
+	ld hl, splash_exit_row_1
+	ld bc, $0801
+	ld d, 17
+	call .splash_putrow
+
+	ld hl, splash_exit_row_2
+	ld bc, $0803
+	ld d, 17
+	call .splash_putrow
+
+	ld de, victory_size
+	ld hl, victory_data + 4
+	call splash_copy		; copy victory.bin to $9000
+
+	ld a, 0x41
+	out (6), a			; map RAM page 1 at $8000..$bfff
+
+	ld bc, victory_size
+	ld de, $fc00 + 36*16
+	ld hl, $9000
+	ldir				; block copy
+
+	;; wait for any key, then exit
+
+	call _getkey
+	jp exit
+
+.splash_putrow:
+	ld a, (hl)
+	push bc
+	push hl
+	call put_char
+	pop hl
+	pop bc
+	inc hl
+	inc b
+	dec d
+	jr nz, .splash_putrow
+	ret
 
 
 ;;; ============
@@ -895,3 +957,8 @@ logo1_data:
 	incbin 'logo-1.bin'
 logo2_data:
 	incbin 'logo-2.bin'
+
+victory_size: equ 448
+
+victory_data:
+	incbin 'victory.bin'

@@ -11,7 +11,19 @@ use warnings;
 
 use GD;
 
-my $base = shift @ARGV or die "usage: $0 base; in base.png, out base-1.bin, base-2.bin";
+my $base = shift @ARGV;
+
+unless ($base)
+{
+    print STDERR "usage: $0 base [anything]\n";
+    print STDERR "  will read in base.png\n";
+    print STDERR "  if no second argument: grayscale frames in base-{1,2}.bin\n";
+    print STDERR "  if second argument: black-and-white picture in base.bin\n";
+    exit 1;
+}
+
+my $bw = shift @ARGV;
+$bw = 1 if defined $bw;
 
 my $png = GD::Image->newFromPng($base.'.png') or die "can't read: ${base}.png";
 my ($w, $h) = $png->getBounds;
@@ -43,17 +55,21 @@ for (my $y = 0; $y < $h; $y++)
             $byte2 |= 1 if $v & 1;
         }
 
+        $byte1 |= $byte2 if $bw;
+
         push @frame1, $byte1;
         push @frame2, $byte2;
     }
 }
 
-my @frames = (\@frame1, \@frame2);
+my @frames = (\@frame1);
+push @frames, \@frame2 unless $bw;
 
-foreach my $frame (1, 2)
+foreach my $frame (0 .. $#frames)
 {
-    my $f = $base.'-'.$frame.'.bin';
+    my $fn = $frame+1;
+    my $f = ($bw ? "$base.bin" : "$base-$fn.bin");
     open BIN, '>:raw', $f or die "can't write: $f: $!";
-    print BIN pack('C*', @{$frames[$frame-1]});
+    print BIN pack('C*', @{$frames[$frame]});
     close BIN;
 }
