@@ -20,3 +20,9 @@ _getkey:		equ $55aa
 
 _asapvar:		equ $d6fc
 _asm_exec_ram:		equ $d748
+
+;;; Graph flags
+;;; ===========
+
+graphflags:		equ $03
+graphdraw:		equ 0

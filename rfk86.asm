@@ -53,7 +53,6 @@ font_chars:	equ 78
 
 start:
 	call _runindicoff
-	call _clrLCD
 
 	push ix
 	push iy
@@ -703,6 +702,13 @@ splash:
 	ld hl, $9000
 	ldir				; block copy
 
+	;; save the six bytes after plot screen
+
+	ld bc, 6
+	ld de, splash_save
+	ld hl, $ce00-6
+	ldir
+
 	;; copy frame 2 to RAM, write to plot screen
 
 	ld hl, logo2_data + 4
@@ -711,16 +717,64 @@ splash:
 	out (6), a
 
 	ld bc, logo_size
-	ld de, $fc00
+	ld de, $ca00
 	ld hl, $9000
+	ldir
 
-	;; 3c -> ($c0+$3c)*$100 = $fc00
-	;; 0a -> ($c0+$0a)*$100 = $ca00
+	;; fill the IM 2 pointer page ($8e00..$8eff) with $8f
 
-	;; set up interrupt handler
+	ld bc, 255
+	ld de, $8e01
+	ld hl, $8e00
+	ld (hl), $8f
+	ldir
 
-.splash_loop:
-	jr .splash_loop
+	;; copy interrupt handler to $8f8f
+
+	ld bc, splash_int_size
+	ld de, $8f8f
+	ld hl, splash_int
+	ldir
+
+	;; set up shadow regs for the interrupt handler and enable it
+
+	di
+
+	exx
+	ld bc, $3c00			; $3c           -> ($c0+$3c)*$100 = $fc00; normal LCD
+	;;ld de, $0536			; $3c^$36 = $0a -> ($c0+$0a)*$100 = $ca00; alt. LCD
+	ld de, $0236			; $3c^$36 = $0a -> ($c0+$0a)*$100 = $ca00; alt. LCD
+	ld hl, splash_loop_jump		; used to terminate the loop
+	exx
+
+	ld a, $8e
+	ld i, a
+
+	im 2
+	ei
+
+	;; then our busy-loop until the user proceeds
+
+splash_loop:
+	ld b, 1
+	call rand			; clock the LFSR to seed RNG
+splash_loop_jump:
+	jr splash_loop
+
+	;; go back to normal IM 1 interrupts, reset screen, restore bytes
+
+	im 1
+	ld a, $3c
+	out (0), a
+	call _clrLCD
+
+	ld bc, 6
+	ld de, $ce00-6
+	ld hl, splash_save
+	ldir
+	set graphdraw, (iy+graphflags)	; flag graph screen as corrupted
+
+	ret
 
 
 ;;; splash_copy: helper, copies frame from prog+hl to target
@@ -750,6 +804,73 @@ splash_copy:
 	call _mm_ldir
 
 	ret
+
+
+;;; splash_int: greyscale interrupt handler
+
+splash_int:
+	ex af, af'
+	exx
+
+	;; skip if LCD off (or maybe refreshing?)
+
+	in a, (3)
+	bit 1, a
+	jr z, .splash_int_exit
+
+	;; count d as (2, 1, 0, 2, 1, 0, ...); flip on 1 and 0
+
+	ld a, d
+	sub 1
+	jr c, .splash_int_reset		; reset d and flip
+	jr z, .splash_int_flip		; just flip
+	ld d, a				; save counter
+	jr .splash_int_exit		; don't flip this time
+
+	;; page-flipping code
+
+.splash_int_reset:
+	ld a, 2
+.splash_int_flip:
+	ld d, a				; save counter
+	ld a, b
+	xor e
+	ld b, a
+	out (c), b
+
+.splash_int_exit:
+
+	;; check for keys to continue
+
+	xor a
+	out (1), a
+	nop
+	nop
+	in a, (1)
+	xor 0xff
+	and 0xfe			; mask out 'enter' and some others
+	jr z, .splash_int_nokey
+
+	xor a
+	ld (hl), a
+	inc hl
+	ld (hl), a			; put nops in place of the jump
+
+.splash_int_nokey:
+
+	;; return from the interrupt
+
+	ex af, af'
+	exx
+	ei
+	reti
+
+splash_int_size: equ $ - splash_int
+
+;;; splash variables
+
+splash_save:
+	db 0, 0, 0, 0, 0, 0
 
 
 ;;; ============
