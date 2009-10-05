@@ -65,6 +65,9 @@ start:
 
 	call splash
 
+	ld a, 0x41
+	out (6), a			; map RAM page 1 at $8000..$bfff
+
 	;; zero the scratch area, we rely on that
 
 	ld hl, nko_bitmap
@@ -131,13 +134,10 @@ select_messages:
 	rst 20h				; OP1 <- program name
 	rst 10h				; bde <- program data
 
-	ld a, e
-	add a, (messages_data - _asm_exec_ram + 4) & 0xff
-	ld e, a
-	ld a, d
-	adc a, (messages_data - _asm_exec_ram + 4) >> 8
-	ld d, a
 	ld a, b
+	ld hl, messages_data - _asm_exec_ram + 4
+	add hl, de
+	ex de, hl
 	adc a, 0
 	ld b, a				; bde <- message data start
 
@@ -145,9 +145,14 @@ select_messages:
 
 load_messages:
 
-	;; clear the nko_text area
-
 	ld ix, messages_index
+
+	ld hl, nko_bitmap
+	ld (.bitmap_pos), hl
+	ld a, 0x43			; a <- "bit 0, a"
+	ld (.bitmap_test), a
+	ld hl, nko_text - $8000
+	ld (.text_pos), hl
 
 .load_loop:
 
@@ -180,6 +185,9 @@ load_messages:
 	call _set_abs_dest_addr
 
 	call _mm_ldir
+
+	ld a, 0x41
+	out (6), a			; map RAM page 1 at $8000..$bfff
 
 	;; update the destination pointer
 
@@ -725,6 +733,7 @@ splash:
 	ld de, logo_size
 	ld hl, logo2_data + 4
 	call splash_copy
+
 	ld a, 0x41
 	out (6), a
 
@@ -752,10 +761,13 @@ splash:
 
 	di
 
+	ld hl, splash_loop_carry
+	ld (hl), 0x37			; (hl) <- "scf"
+
 	exx
 	ld bc, $3c00			; $3c           -> ($c0+$3c)*$100 = $fc00; normal LCD
 	ld de, $0236			; $3c^$36 = $0a -> ($c0+$0a)*$100 = $ca00; alt. LCD
-	ld hl, splash_loop_jump		; used to terminate the loop
+	ld hl, splash_loop_carry	; used to terminate the loop
 	exx
 
 	ld a, $8e
@@ -769,8 +781,9 @@ splash:
 splash_loop:
 	ld b, 1
 	call rand			; clock the LFSR to seed RNG
-splash_loop_jump:
-	jr splash_loop
+splash_loop_carry:
+	scf
+	jr c, splash_loop
 
 	;; go back to normal IM 1 interrupts, reset screen, restore bytes
 
@@ -856,7 +869,7 @@ splash_int:
 
 	;; check for keys to continue
 
-	xor a
+	ld a, %1000000
 	out (1), a
 	nop
 	nop
@@ -865,10 +878,7 @@ splash_int:
 	and 0xfe			; mask out 'enter' and some others
 	jr z, .splash_int_nokey
 
-	xor a
-	ld (hl), a
-	inc hl
-	ld (hl), a			; put nops in place of the jump
+	ld (hl), 0xb7			; (hl) <- "or a"
 
 .splash_int_nokey:
 
