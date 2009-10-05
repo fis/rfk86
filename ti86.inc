@@ -8,6 +8,8 @@ _ex_ahl_bde:		equ $45f3
 _set_abs_src_addr:	equ $4647
 _set_mm_num_bytes:	equ $464f
 _clrLCD:		equ $4a7e
+_clrScrn:		equ $4a82
+_homeup:		equ $4a95
 _runindicon:		equ $4aad
 _runindicoff:		equ $4ab1
 _set_abs_dest_addr:	equ $5285
@@ -18,6 +20,7 @@ _getkey:		equ $55aa
 ;;; RAM locations
 ;;; =============
 
+_winBtm:		equ $d13e
 _asapvar:		equ $d6fc
 _asm_exec_ram:		equ $d748
 

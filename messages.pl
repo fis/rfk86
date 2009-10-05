@@ -34,6 +34,10 @@ my @messages = <IN>;
 close IN;
 s/\n$// foreach @messages;
 
+# try to sensiblize the line-wrapping, if possible
+
+$_ = try_wrap($_) foreach @messages;
+
 # write out index and data in new alphabet
 
 open OUT, '>:raw', 'messages.bin' or die "can't write messages.dat: $!";
@@ -58,3 +62,52 @@ print OUT "messages_count: equ ", scalar @messages, "\n";
 print OUT "messages_bytes: equ $bytes\n";
 
 close OUT;
+
+# line wrapping helper
+
+sub try_wrap
+{
+    my $msg = shift;
+
+    my $space_left = 96-length($msg);
+
+    return $msg if length($msg) <= 32;
+
+    # try to better line-1 wrapping
+
+    if (substr($msg, 32, 1) eq ' ')
+    {
+        # very good place to break, just remove this space
+        substr($msg, 32, 1, '');
+        $space_left++;
+    }
+    else
+    {
+        my $break = rindex($msg, ' ', 31);
+        die "aieee, wrapping problem: $msg" if $break < 0;
+        my $to_move = 31-$break;
+        return $msg if $to_move > $space_left;
+        substr($msg, $break, 0, ' 'x$to_move);
+        $space_left -= $to_move;
+    }
+
+    return $msg if length($msg) <= 64;
+
+    # try to better line-2 wrapping
+
+    if (substr($msg, 64, 1) eq ' ')
+    {
+        # again a fortuitous happenstance
+        substr($msg, 64, 1, '');
+    }
+    else
+    {
+        my $break = rindex($msg, ' ', 63);
+        die "aieee, another wrapping problem: $msg" if $break < 0;
+        my $to_move = 63-$break;
+        return $msg if $to_move > $space_left;
+        substr($msg, $break, 0, ' 'x$to_move);
+    }
+
+    return $msg;
+}

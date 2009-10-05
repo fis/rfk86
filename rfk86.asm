@@ -317,8 +317,12 @@ init:
 
 exit:
 
-	call _clrLCD
+	ld a, 8
+	ld (_winBtm), a
+
 	call _runindicon
+	call _clrScrn
+	call _homeup
 
 	pop iy
 	pop ix
