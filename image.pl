@@ -2,6 +2,10 @@
 
 # image.pl: 4-level grayscale -> two .bin files (rfk86)
 
+# Copyright (c) 2009, Heikki Kallasjoki.
+# All rights reserved.
+# License terms: see README.txt, "Legal Disclaimer".
+
 # TI-86 greyscale is the flickering thing; we assume frame 1 will be
 # shown 2/3 of the time, frame 2 1/3 of the time; so 00 is white, 01
 # is light gray, 10 is dark gray and 11 is black.

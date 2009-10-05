@@ -2,6 +2,10 @@
 
 # messages.pl -- convert rfk messages to rfk86 data
 
+# Copyright (c) 2009, Heikki Kallasjoki.
+# All rights reserved.
+# License terms: see README.txt, "Legal Disclaimer".
+
 use strict;
 use warnings;
 

@@ -1,5 +1,9 @@
 # rfk86:Makefile - "build system"
 
+# Copyright (c) 2009, Heikki Kallasjoki.
+# All rights reserved.
+# License terms: see README.txt, "Legal Disclaimer".
+
 prog = rfk86
 
 default: $(prog).86p

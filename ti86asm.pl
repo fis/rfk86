@@ -2,6 +2,10 @@
 
 # ti86asm.pl: assemble a 86p program
 
+# Copyright (c) 2009, Heikki Kallasjoki.
+# All rights reserved.
+# License terms: see README.txt, "Legal Disclaimer".
+
 use strict;
 use warnings;
 

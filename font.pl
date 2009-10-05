@@ -2,6 +2,10 @@
 
 # font.pl: rfk86 tiny unreadable font, png -> binary
 
+# Copyright (c) 2009, Heikki Kallasjoki.
+# All rights reserved.
+# License terms: see README.txt, "Legal Disclaimer".
+
 # TI-86 screen is a monochrome thing; 128x64 pixels, with eight
 # horizontal neighbor pixels packed into a single byte.  Our font
 # characters are 4 pixels wide, so one nybble contains all the pixels

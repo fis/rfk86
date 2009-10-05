@@ -1,6 +1,10 @@
 ;;; ti86.inc -*- mode: z80-asm -*-
 ;;; TI-86 specific constants
 
+;;; Copyright (c) 2009, Heikki Kallasjoki.
+;;; All rights reserved.
+;;; License terms: see README.txt, "Legal Disclaimer".
+
 ;;; ROM routines
 ;;; ============
 

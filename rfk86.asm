@@ -1,6 +1,10 @@
 ;;; rfk86.asm -*- mode: z80-asm -*-
 ;;; TI-86 robotfindskitten port
 
+;;; Copyright (c) 2009, Heikki Kallasjoki.
+;;; All rights reserved.
+;;; License terms: see README.txt, "Legal Disclaimer".
+
 include 'ti86.inc'
 include 'messages.inc'
 
