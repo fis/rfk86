@@ -27,5 +27,5 @@ victory.bin: victory.png
 
 clean:
 	$(RM) $(prog).86p $(prog).bin $(prog).sym
-	$(RM) messages.inc messages.bin
+	$(RM) messages.bin messages.inc huffman.inc
 	$(RM) font.bin logo-1.bin logo-2.bin victory.bin

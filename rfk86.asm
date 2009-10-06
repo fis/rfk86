@@ -514,6 +514,21 @@ found_kitten:
 	jp splash_exit	; show message and quit
 
 
+;;; ===================================
+;;; Huffman/LZ77 decompression routines
+;;; ===================================
+
+
+;;; decompress: combined LZ77/Huffman decompression
+
+decompress:
+	
+
+;;; the Huffman tree data
+
+	include 'huffman.inc'
+
+
 ;;; ============================
 ;;; Screen manipulation routines
 ;;; ============================
