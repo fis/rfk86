@@ -742,52 +742,24 @@ splash:
 	ld hl, $9000
 	ldir
 
-	;; fill the IM 2 pointer page ($8e00..$8eff) with $8f
-
-	ld bc, 255
-	ld de, $8e01
-	ld hl, $8e00
-	ld (hl), $8f
-	ldir
-
-	;; copy interrupt handler to $8f8f
-
-	ld bc, splash_int_size
-	ld de, $8f8f
-	ld hl, splash_int
-	ldir
-
-	;; set up shadow regs for the interrupt handler and enable it
+	;; set up the interrupt handler
 
 	di
-
-	ld hl, splash_loop_carry
-	ld (hl), 0x37			; (hl) <- "scf"
 
 	exx
 	ld bc, $3c00			; $3c           -> ($c0+$3c)*$100 = $fc00; normal LCD
 	ld de, $0236			; $3c^$36 = $0a -> ($c0+$0a)*$100 = $ca00; alt. LCD
 	ld hl, splash_loop_carry	; used to terminate the loop
+	ld (hl), 0x37			; (hl) <- "scf"
 	exx
 
-	ld a, $8e
-	ld i, a
+	;; loop until keypress
 
-	im 2
-	ei
+	ld hl, splash_loop
+	call splash_int_activate
 
-	;; then our busy-loop until the user proceeds
+	;; make sure we have normal LCD active, cleanup
 
-splash_loop:
-	ld b, 1
-	call rand			; clock the LFSR to seed RNG
-splash_loop_carry:
-	scf
-	jr c, splash_loop
-
-	;; go back to normal IM 1 interrupts, reset screen, restore bytes
-
-	im 1
 	ld a, $3c
 	out (0), a
 	call _clrLCD
@@ -798,6 +770,17 @@ splash_loop_carry:
 	ldir
 	set graphdraw, (iy+graphflags)	; flag graph screen as corrupted
 
+	ret
+
+
+;;; splash_loop: user code loop ran during the splash
+
+splash_loop:
+	ld b, 1
+	call rand			; clock the LFSR to seed RNG
+splash_loop_carry:
+	scf				; changed to "or a" when finished
+	jr c, splash_loop
 	ret
 
 
@@ -833,10 +816,52 @@ splash_copy:
 	ret
 
 
+;;; splash_int_activate: insert the interrupt handler in place
+
+splash_int_activate:
+	push hl				; save user routine location
+
+	;; fill the IM 2 pointer page ($8e00..$8eff) with $8f
+
+	ld bc, 255
+	ld de, $8e01
+	ld hl, $8e00
+	ld (hl), $8f
+	ldir
+
+	;; copy interrupt handler to $8f8f
+
+	ld bc, splash_int_size
+	ld de, $8f8f
+	ld hl, splash_int
+	ldir
+
+	;; enable the handler
+
+	ld a, $8e
+	ld i, a
+
+	im 2
+	ei
+
+	;; call user routine
+
+	pop hl
+	ld bc, .splash_int_user_done
+	push bc				; return address
+	jp (hl)
+.splash_int_user_done:
+
+	;; user routine finished, go back to IM 1
+
+	im 1
+	ret
+
+
 ;;; splash_int: greyscale interrupt handler
 
 splash_int:
-	ex af, af'
+	ex af, af' ;'
 	exx
 
 	;; skip if LCD off (or maybe refreshing?)
@@ -869,7 +894,7 @@ splash_int:
 
 	;; check for keys to continue
 
-	ld a, %1000000
+	ld a, %1000001
 	out (1), a
 	nop
 	nop
@@ -884,7 +909,7 @@ splash_int:
 
 	;; return from the interrupt
 
-	ex af, af'
+	ex af, af' ;'
 	exx
 	ei
 	reti
@@ -903,7 +928,9 @@ splash_exit_row_1:
 splash_exit_row_2:
 	;; Way to go, robot!
 	db 23, 33, 57, 0, 52, 47, 0, 39, 47, 28, 0, 50, 47, 34, 47, 52, 31
-
+splash_exit_row_3:
+	;; press clear to quit
+	db 48, 50, 37, 51, 51, 0, 35, 44, 37, 33, 50, 0, 52, 47, 0, 49, 53, 41, 52
 
 ;;; splash_exit: victory splash screen
 
@@ -922,6 +949,11 @@ splash_exit:
 	ld d, 17
 	call .splash_putrow
 
+	ld hl, splash_exit_row_3
+	ld bc, $0d09
+	ld d, 19
+	call .splash_putrow
+
 	ld de, victory_size
 	ld hl, victory_data + 4
 	call splash_copy		; copy victory.bin to $9000
@@ -930,13 +962,28 @@ splash_exit:
 	out (6), a			; map RAM page 1 at $8000..$bfff
 
 	ld bc, victory_size
-	ld de, $fc00 + 36*16
+	ld de, $fc00 + 30*16
 	ld hl, $9000
 	ldir				; block copy
 
-	;; wait for any key, then exit
+	;; set up the interrupt handler
 
-	call _getkey
+	di
+
+	exx
+	ld bc, $3c00			; $3c           -> normal LCD
+	ld de, $0200			; $3c^$00 = $3c -> normal LCD (no flip)
+	ld hl, splash_exit_loop_carry	; used to terminate the loop
+	ld (hl), 0x37			; (hl) <- "scf"
+	exx
+
+	;; loop until keypress
+
+	ld hl, splash_exit_loop
+	call splash_int_activate
+
+	;; go to normal exit cleanup
+
 	jp exit
 
 .splash_putrow:
@@ -950,6 +997,74 @@ splash_exit:
 	inc b
 	dec d
 	jr nz, .splash_putrow
+	ret
+
+
+;;; splash_exit_loop: user code loop ran during the exit splash
+
+splash_exit_loop:
+	;; Animation:
+	;; Y range: rows 34 .. 53
+	;;  Robot: bytes 1 .. 5  >>>
+	;; Kitten: bytes 9 .. 14 <<<
+	ld bc, $1409			; b <- 20 (rows); c <- 9 (for adds)
+	ld hl, $fc00+34*16+1		; hl <- first animated byte
+.exit_animation:
+	;; animate robot
+	ld a, (hl)			; a <- byte 1 value
+	ld d, h
+	ld e, l				; de <- hl (for putting byte 1 back)
+	srl a
+	inc hl
+	rr (hl)
+	inc hl
+	rr (hl)
+	inc hl
+	rr (hl)
+	inc hl
+	rr (hl)				; rotate bytes 2 .. 5
+	jr nc, .exit_animation_no_carry_1
+	or 0x80				; carry from byte 5, add to byte 1
+.exit_animation_no_carry_1:
+	ld (de), a			; put byte 1 back
+	;; animate kitten
+	ld a, l
+	add c
+	ld l, a				; hl <- byte 14 (no carry possible)
+	ld a, (hl)			; a <- byte 14 value
+	ld d, h
+	ld e, l				; de <- hl (for putting byte 14 back)
+	sla a
+	dec hl
+	rl (hl)
+	dec hl
+	rl (hl)
+	dec hl
+	rl (hl)
+	dec hl
+	rl (hl)
+	dec hl
+	rl (hl)				; rotate bytes 9 .. 13
+	jr nc, .exit_animation_no_carry_2
+	or 1				; carry from byte 9, add to byte 14
+.exit_animation_no_carry_2:
+	ld (de), a			; put byte 14 back
+	dec hl
+	ld a, l
+	add c
+	ld l, a
+	ld a, h
+	adc a, 0
+	ld h, a				; hl <- next row, byte 1 (with carry)
+	djnz .exit_animation
+	;; wait a moment
+	halt
+	halt
+	halt
+	halt
+splash_exit_loop_carry:
+	scf				; changed to "or a" when finished
+	jr c, splash_exit_loop
 	ret
 
 
