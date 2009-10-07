@@ -28,6 +28,8 @@ include 'messages.inc'
 ;;;     00 = empty space, 01 = kitten, 02.. = non-kitten object
 ;;;   $8800 .. $8803 (4 bytes)
 ;;;     robot position variable
+;;;   $8f00 .. $8fff (128 bytes)
+;;;     used to hold the compressed message before decomrpessing to $9000+x
 ;;;   $8ffe .. $8fff (2 bytes)
 ;;;     a very temporary word if variables are needed
 ;;;   $9000 .. $977f (20*96 = 1920 bytes)
@@ -37,6 +39,7 @@ include 'messages.inc'
 nko_bitmap:	equ $8100
 screen_map:	equ $8100
 robot_pos:	equ $8800
+compressed:	equ $8f00
 temp:		equ $8ffe
 nko_text:	equ $9000
 
@@ -45,8 +48,10 @@ nko_text:	equ $9000
 nko_count:	equ 20
 ;;; This should be changeable without problems, though.
 robot_char:	equ 77
-;;; And this one should really match with the font
+;;; And this one should really match with the font.
 font_chars:	equ 78
+;;; While this *really* should match with the messages.pl alphabet.
+msg_chars:	equ 76
 
 
 ;;; ==========================
@@ -151,7 +156,7 @@ load_messages:
 	ld (.bitmap_pos), hl
 	ld a, 0x43			; a <- "bit 0, a"
 	ld (.bitmap_test), a
-	ld hl, nko_text - $8000
+	ld hl, nko_text
 	ld (.text_pos), hl
 
 .load_loop:
@@ -168,7 +173,7 @@ load_messages:
 	ld c, (ix+0)			; c <- msg len
 	jr z, .load_skip
 
-	;; copy a bytes from bde into the message space
+	;; copy a bytes from bde into the decompression zone
 
 	ld l, c
 	xor a
@@ -179,15 +184,24 @@ load_messages:
 	call _set_abs_src_addr
 	call _ex_ahl_bde		; bde <- message data pointer
 
-.text_pos: equ $+1
-	ld hl, nko_text - $8000
-	ld a, 1				; ahl <- dest pointer, always in page 1
+	ld hl, compressed - $8000
+	ld a, 1				; ahl <- dest pointer, fixed location
 	call _set_abs_dest_addr
 
 	call _mm_ldir
 
 	ld a, 0x41
 	out (6), a			; map RAM page 1 at $8000..$bfff
+
+	;; LZ77/Huffman-decompress the message
+
+	push bc
+	push de
+.text_pos: equ $+1
+	ld de, nko_text
+	call decompress
+	pop de
+	pop bc
 
 	;; update the destination pointer
 
@@ -520,9 +534,168 @@ found_kitten:
 
 
 ;;; decompress: combined LZ77/Huffman decompression
+;;;    in: de - target address to decompress current data to
+;;;   out: de - points to first byte after decompressed data
+;;;  mess: a, b, c, h, l
 
 decompress:
-	
+	;; reset the decompression bit-reading code
+
+	xor a
+	ld (read_bit_offset), a
+	ld a, 0x46
+	ld (read_bit_bit), a
+
+	;; read and process symbols
+
+.decompress_loop:
+
+	ld hl, hufftree
+	call read_huffman		; a <- next lit/len symbol
+
+	cp msg_chars
+	ret z				; token == N: end of message
+	jr c, .decompress_lz77		; token > N: (length, distance) pair
+	;; token < N: literal byte
+	ld (de), a
+	inc de
+	jr .decompress_loop
+
+	;; handle LZ77 encoded parts
+	;;  see the messages.pl tables to make sense of this
+
+.decompress_lz77:
+
+	;; parse the length token in 'a'
+
+	sub msg_chars+1			; a <- C -- see messages.pl
+	ld c, a				; c <- C (for safe-keeping)
+	cp 8
+	jr c, .lz77_len_direct		; direct-length code: l == len-3
+	rra				; a <- C >> 1; carry=0 here
+	srl a				; a <- C >> 2
+	dec a
+	ld b, a				; b <- number of extra bits
+	ld a, c
+	and 3
+	or 4				; a <- "1.." with .. from C low bits
+	call read_bits
+	ld c, a				; c <- len-3
+.lz77_len_direct:
+
+	;; read in and parse the distance code
+
+	xor a				; a <- 0: default dist-1
+	ld b, a				; make sure b is always 0 later
+	call read_bit
+	jr z, .lz77_dist_direct
+	ld b, 4
+	call read_bits			; a <- lz77 distance code value C
+	cp 4
+	jr c, .lz77_dist_direct		; direct-length code: a == dist-1
+	rra				; a <- C >> 1; carry has lowest bit of a
+	dec a
+	ld b, a				; b <- number of extra bits; carry still valid
+	rla				; stick lowest bit of C back to a
+	and 1
+	or 2				; a <- "1." with . from C low bit
+	call read_bits			; a <- dist-1
+.lz77_dist_direct:
+
+	;; generate the repeat sequence with ldir
+
+	ld l, a
+	ld a, e
+	scf
+	sbc a, l
+	ld l, a				; l <- e - dist
+	ld a, d
+	sbc a, 0
+	ld h, a				; hl <- de - dist
+
+	ld a, c
+	add a, 3
+	ld c, a				; bc <- len
+
+	ldir
+
+	jr .decompress_loop
+
+
+;;; read_huffman: read a Huffman-encoded symbol
+;;;    in: hl - huffman tree root
+;;;   out: a - next symbol
+;;;  mess: b, h, l
+
+read_huffman_go_right:
+	;; descend to right branch
+	inc hl
+read_huffman_enter:
+	ld b, (hl)
+	inc hl
+	ld h, (hl)
+	ld l, b
+read_huffman:
+	ld a, (hl)
+	or a
+	jr nz, .read_huffman_descend	; was an inner node
+	inc hl
+	ld a, (hl)
+	ret
+.read_huffman_descend:
+	call read_bit
+	jr nz, read_huffman_go_right
+	;; descend to left branch
+	dec hl
+	jr read_huffman_enter
+
+
+;;; read_bit: read a bit from the decompressed data
+;;;    in: -
+;;;   out: zero flag set based on next bit
+;;;  mess: just the flags
+
+read_bit:
+	or a				; clear carry
+	push hl
+read_bit_offset: equ $+1
+	ld hl, compressed		; low byte modified
+read_bit_bit: equ $+1
+	bit 0, (hl)			; bit index modified
+	push af				; save the flags
+	;; increment position
+	ld hl, read_bit_bit
+	ld a, (hl)
+	add a, 0x08
+	jp p, read_bit_no_advance	; did not wrap, still in same byte
+	ld (hl), 0x46			; (hl) <- "bit 0, (hl)"
+	ld hl, read_bit_offset
+	inc (hl)
+	jr read_bit_done
+read_bit_no_advance:
+	ld (hl), a
+read_bit_done:
+	pop af				; restore flags for customer
+	pop hl
+	ret
+
+
+;;; read_bits: read a multi-bit (up to 8) unit
+;;;    in: b - number of bits to read
+;;;   out: a - those bits rotated in from the right
+;;;        b - constant 0
+
+read_bits:
+.read_bits_loop:
+	or a
+	call read_bit
+	jr z, .read_bits_zero
+	scf
+.read_bits_zero:
+	rla
+	djnz .read_bits_loop
+	ret
+
 
 ;;; the Huffman tree data
 

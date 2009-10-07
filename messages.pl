@@ -60,6 +60,55 @@
 # while pointers to inner nodes point at the second byte (high byte of
 # left pointer); this is always nonzero, and it's simple to inc/dec
 # once to access either pointer.
+#
+# Extra note: the Huffman tree for the distance alphabet takes up more
+# space than the coding saves.  So we use a simplified distance code,
+# where a zero bit means Dist=1 (i.e. RLE) and a one bit is followed
+# by the four-bit binary encoding of the "Code" field of the above
+# table.
+#
+# Binary table for the length codes:
+#
+# code-(N+1)     len-3
+# ----------   -------
+#      00000   0000000
+#        ...       ...
+#      00111   0000111
+#      01000   000100x
+#      01001   000101x
+#      01010   000110x
+#      01011   000111x
+#      01100   00100xx
+#      01101   00101xx
+#      01110   00110xx
+#      01111   00111xx
+#      10000   0100xxx
+#      10001   0101xxx
+#      10010   0110xxx
+#      10011   0111xxx
+#      10100   100xxxx
+#      10101   101xxxx
+# So: with extra bits, '1' + two lowest bits + extras
+#     number of extra bits = (C >> 2) - 1
+#
+# Binary table for the distance codes:
+#
+# code    dist-1
+# ----   -------
+# 0000   0000000 (not actually used)
+#  ...       ...
+# 0011   0000011
+# 0100   000010x
+# 0101   000011x
+# 0110   00010xx
+# 0111   00011xx
+# 1000   0010xxx
+# 1001   0011xxx
+# 1010   010xxxx
+# 1011   011xxxx
+# 1100   10xxxxx
+# So: with extra bits, '1' + lowest bit + extras
+#     number of extra bits = (C >> 1) - 1
 
 use strict;
 use warnings;
@@ -351,7 +400,7 @@ sub huffman_print
 {
     my ($tree, $label, $file) = @_;
 
-    print $file "$label:\n";
+    print $file "$label: equ \$+1\n";
 
     my $walk;
     $walk = sub {
@@ -359,8 +408,8 @@ sub huffman_print
         my $n = $label.'_node_'.$prefix;
         if (scalar @$t == 2)
         {
-            print $file ".$n: equ $-1 ; leaf\n";
-            print $file "\tdb $t->[1], 0\n";
+            print $file ".$n: equ \$-1 ; leaf\n";
+            print $file "\tdb 0, $t->[1]\n";
             return;
         }
         print $file ".$n: ; inner\n";
