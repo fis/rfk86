@@ -542,9 +542,9 @@ decompress:
 	;; reset the decompression bit-reading code
 
 	xor a
-	ld (read_bit_offset), a
-	ld a, 0x46
-	ld (read_bit_bit), a
+	ld (compress_byte), a
+	ld a, 8
+	ld (compress_bit), a
 
 	;; read and process symbols
 
@@ -588,7 +588,7 @@ decompress:
 	xor a				; a <- 0: default dist-1
 	ld b, a				; make sure b is always 0 later
 	call read_bit
-	jr z, .lz77_dist_direct
+	jr nc, .lz77_dist_direct
 	ld b, 4
 	call read_bits			; a <- lz77 distance code value C
 	cp 4
@@ -625,16 +625,16 @@ decompress:
 ;;; read_huffman: read a Huffman-encoded symbol
 ;;;    in: hl - huffman tree root
 ;;;   out: a - next symbol
-;;;  mess: b, h, l
+;;;  mess: h, l
 
 read_huffman_go_right:
 	;; descend to right branch
 	inc hl
 read_huffman_enter:
-	ld b, (hl)
+	ld a, (hl)
 	inc hl
 	ld h, (hl)
-	ld l, b
+	ld l, a
 read_huffman:
 	ld a, (hl)
 	or a
@@ -644,7 +644,7 @@ read_huffman:
 	ret
 .read_huffman_descend:
 	call read_bit
-	jr nz, read_huffman_go_right
+	jr c, read_huffman_go_right
 	;; descend to left branch
 	dec hl
 	jr read_huffman_enter
@@ -652,30 +652,21 @@ read_huffman:
 
 ;;; read_bit: read a bit from the decompressed data
 ;;;    in: -
-;;;   out: zero flag set based on next bit
-;;;  mess: just the flags
+;;;   out: carry flag set based on next bit
+;;;  mess: -
 
 read_bit:
-	or a				; clear carry
 	push hl
-read_bit_offset: equ $+1
-	ld hl, compressed		; low byte modified
-read_bit_bit: equ $+1
-	bit 0, (hl)			; bit index modified
-	push af				; save the flags
-	;; increment position
-	ld hl, read_bit_bit
-	ld a, (hl)
-	add a, 0x08
-	jp p, read_bit_no_advance	; did not wrap, still in same byte
-	ld (hl), 0x46			; (hl) <- "bit 0, (hl)"
-	ld hl, read_bit_offset
-	inc (hl)
-	jr read_bit_done
-read_bit_no_advance:
-	ld (hl), a
-read_bit_done:
-	pop af				; restore flags for customer
+	ld hl, (compress_byte)		; hl <- byte to inspect
+	rrc (hl)			; bit to carry
+	;; increment the position
+	ld hl, compress_bit		; hl <- compress_bit counter
+	dec (hl)
+	jr nz, .read_bit_no_advance	; still bits left in the byte
+	ld (hl), 8			; reset counter
+	inc hl				; hl <- low byte of compress_byte
+	inc (hl)			; move to next byte
+.read_bit_no_advance:
 	pop hl
 	ret
 
@@ -686,16 +677,16 @@ read_bit_done:
 ;;;        b - constant 0
 
 read_bits:
-.read_bits_loop:
-	or a
-	call read_bit
-	jr z, .read_bits_zero
-	scf
-.read_bits_zero:
-	rla
-	djnz .read_bits_loop
+	call read_bit			; 3 bytes, 17 cycles
+	rla				; 1 byte, 4 cycles
+	djnz read_bits
 	ret
 
+
+;;; bitstream reading state
+
+compress_bit: db 8
+compress_byte: dw compressed
 
 ;;; the Huffman tree data
 
