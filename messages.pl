@@ -152,7 +152,7 @@ sub xcode
         next unless $n >= $row->[0] and $n <= $row->[1];
         my $x = '';
         $n -= $row->[0];
-        $x .= ($n&1), $n >>= 1 foreach (1 .. $row->[3]);
+        $x = ($n&1).$x, $n >>= 1 foreach (1 .. $row->[3]);
         return ($row->[2] + $n, $x);
     }
     die "aieeee xcode broke";
@@ -172,21 +172,22 @@ while (my $msg = shift @ARGV)
 # slurp in all the messages
 
 open IN, '<', 'messages.txt' or die "can't read messages.txt: $!";
-my @messages = <IN>;
+my @texts = <IN>;
 close IN;
-s/\n$// foreach @messages;
+s/\n$// foreach @texts;
 
 # try to sensiblize the line-wrapping, if possible
 
-$_ = try_wrap($_) foreach @messages;
+$_ = try_wrap($_) foreach @texts;
 
 my $bytes = 0;
-$bytes += length($_) foreach @messages;
+$bytes += length($_) foreach @texts;
 print "Uncompressed message data: $bytes bytes\n";
 
 # compress the messages
 
-$_ = compress($_) foreach @messages;
+my @messages;
+push @messages, compress($_) foreach @texts;
 
 my $t = 0;
 foreach my $code (@messages)
@@ -243,10 +244,11 @@ foreach my $code (@messages)
     {
         if (ref($item))
         {
-            my $lc = $lcode->[$item->[0]] or die "no code for len $item->[0]";
-            my $dc = $dcode->[$item->[2]] or die "no code for dist $item->[2]";
-            my $fixdc = ($item->[2] == 0 ? '0' : '1xxxx');
-            $bits .= $lc.$item->[1].$fixdc.$item->[3];
+            my ($lsym, $lx, $dsym, $dx) = @$item;
+            my $lc = $lcode->[$lsym] or die "no code for len $lsym";
+            my $dc = $dcode->[$dsym] or die "no code for dist $dsym";
+            my $fixdc = ($dsym == 0 ? '0' : '1'.unpack('B4', chr($dsym<<4)));
+            $bits .= $lc.$lx.$fixdc.$dx;
             $bdiff += length($dc) - length($fixdc);
         }
         else
@@ -272,7 +274,7 @@ print "LZ77 with Huffman (no dist tree): ", ($msize+$lsize), " bytes\n";
 open OUT, '>:raw', 'messages.bin' or die "can't write messages.dat: $!";
 
 print OUT pack('C*', @mindex);
-print OUT pack('B*', $_) foreach @mdata;
+print OUT pack('b*', $_) foreach @mdata;
 
 close OUT;
 

@@ -154,7 +154,7 @@ load_messages:
 
 	ld hl, nko_bitmap
 	ld (.bitmap_pos), hl
-	ld a, 0x43			; a <- "bit 0, a"
+	ld a, 0x47			; a <- "bit 0, a"
 	ld (.bitmap_test), a
 	ld hl, nko_text
 	ld (.text_pos), hl
@@ -555,7 +555,7 @@ decompress:
 
 	cp msg_chars
 	ret z				; token == N: end of message
-	jr c, .decompress_lz77		; token > N: (length, distance) pair
+	jr nc, .decompress_lz77		; token > N: (length, distance) pair
 	;; token < N: literal byte
 	ld (de), a
 	inc de
