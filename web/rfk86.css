@@ -1,0 +1,45 @@
+body {
+    background-color: black;
+    color: #444;
+}
+
+span.b, span.n {
+    color: #999;
+}
+
+span.h {
+    font-weight: bold;
+    color: #ddd;
+    border-bottom: 2px solid #ddd;
+}
+
+em {
+    font-style: normal;
+    color: #ccc;
+}
+
+span.deem {
+    color: #444;
+}
+
+a {
+    color: #9e9;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Screenshot page specials. */
+
+div.screen {
+    float: left;
+    text-align: center;
+}
+
+img {
+    padding: 2px;
+    border: 3px solid #444;
+    background-color: #897;
+}

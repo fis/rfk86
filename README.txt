@@ -1,5 +1,5 @@
 +-----------------------------------------------------+
-| rfk86 v0.1.GIT                                      |
+| rfk86 v0.2.GIT                                      |
 | It is a zen simulator, hidden in a TI-86.           |
 |                                                     |
 +-----------------------------------------------------+
@@ -39,9 +39,9 @@
 +-----------------------------------------------------+
 | Who to Blame?                                       |
 |                                                     |
-| Project page: http://zem.fi/rfk86/  (soon!)         |
+| Project page: http://zem.fi/rfk86/                  |
 |       Author: Heikki Kallasjoki                     |
-|        Email: rfk86@zem.fi          (also soon!)    |
+|        Email: rfk86@zem.fi                          |
 |     Freenode: fizzie                                |
 |                                                     |
 +-----------------------------------------------------+

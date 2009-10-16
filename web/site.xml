@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rfk>
+  <navbar>
+    <navitem type="page" id="index" />
+    <navitem type="page" id="news" />
+    <navitem type="page" id="screens" />
+    <navitem type="page" id="devel" />
+    <navitem type="page" id="legal" />
+    <navitem type="sep" />
+    <navitem type="link" title="git repo" url="http://git.zem.fi/rfk86/" />
+    <navitem type="link" title="rfk home" url="http://robotfindskitten.org/" />
+  </navbar>
+  <page id="index" name="home" title="rfk86">
+    <h>An Introduction</h>
+    <p>
+      This is a port of
+      the <a href="http://robotfindskitten.org/">robotfindskitten</a>
+      game for the TI-86 graphing calculator.
+    </p>
+    <p>
+      To use, trans-re-mogrify the supplied <em>rfk86.86p</em> into
+      your calculator by some unspecified means, then
+      invoke <em>Asm(rfk86)</em> or use some sort of shell.
+      Use <em>clear</em> (or many other keys) to get past the
+      introductionary splash screen, the arrow keys to move the
+      eponymous, cubical robot, and the <em>exit</em> key to escape,
+      if the suspense is too much for you.
+    </p>
+    <p>
+      Kittens have eaten the developer's link cable, so this
+      application has been so far tested only with an emulator.  It is
+      very likely to work on a real calculator, but if it breaks, you
+      have to fashion a modernist sculpture out of both pieces.
+    </p>
+    <sep />
+    <h>Downloads</h>
+    <p>
+      Latest version: <em>%LATEST%</em>
+    </p>
+    <p>
+      <em>.86p calculator program:</em> <a href="rfk86.86p">rfk86.86p</a><br />
+      <em>         source archive:</em> <a href="rfk86-0.2.tar.gz">rfk86-0.2.tar.gz</a>
+    </p>
+    <p>
+      For the latest word in TI-86 kitten-finding, see
+      the <a href="http://git.zem.fi/rfk86/">git repo.</a>
+    </p>
+    <p>
+      You may also peruse the <a href="legal.html">legal disclaimer.</a>
+    </p>
+    <sep />
+    <h>Contact Information (i.e., Who to Blame for This Mess)</h>
+    <p>
+      <em>Project page:</em> <a href="http://zem.fi/rfk86/">http://zem.fi/rfk86/</a>
+      <span class="deem">[you are here]</span><br />
+      <em>      Author:</em> Heikki Kallasjoki<br />
+      <em>       Email:</em> rfk86 <em>at</em> zem.fi<br />
+      <em>    Freenode:</em> fizzie
+    </p>
+  </page>
+  <page id="news" name="news" title="rfk86 // news">
+    <h>What's New in the TI-86 Kitten-Finding Scene?</h>
+    <p><em>2009-10-16 -- rfk86 Website Opens</em></p>
+    <p>
+      The very site you are now reading was "published".
+    </p>
+    <sep />
+    <h>Change Log for rfk86</h>
+    <p><em>%LATEST%</em></p>
+    <p>
+      NKI messages compressed: .86p file 23685 bytes → 16720 bytes.<br />
+      Kitten-finding congratulations animated.
+    </p>
+    <p><em>v0.1.9885950844cf4daa82315fd6bc94865053cf9792</em></p>
+    <p>
+      First sort-of released version, though I doubt many people saw
+      it, since it wasn't linked from the robotfindskitten.org main
+      hub.
+    </p>
+  </page>
+  <page id="screens" name="screens" title="rfk86 // screenshots">
+    <h>Screenshots</h>
+    <p>
+      Here you can find some screenshots of the game.
+    </p>
+    <sep />
+    <p><em>Splash screen:</em> shown at startup.</p>
+    <p><em>Game screen:</em> this is where you play.</p>
+    <p><em>Exit screen:</em> shown when robotfindskitten.</p>
+    <footer>
+      <![CDATA[
+<div class="screen">
+  <img src="screen_splash.png" />
+  <em>Splash screen</em>
+</div>
+<div class="screen">
+  <img src="screen_game.png" />
+  <em>Game screen</em>
+</div>
+<div class="screen">
+  <img src="screen_exit.png" />
+  <em>Exit screen</em>
+</div>
+      ]]>
+    </footer>
+  </page>
+  <page id="devel" name="devel" title="rfk86 // developer's corner">
+    <h>How To Compile It</h>
+    <p>
+      There is a <em>Makefile</em> in the source package.  You will
+      need
+      the <a href="http://savannah.nongnu.org/projects/z80asm">z80asm</a>
+      tool (in Debian/Ubuntu, the <em>z80asm</em> package) to assemble
+      the code, and a reasonable Perl installation to run the build
+      scripts.  The <em>GD</em> Perl module is also needed, to convert
+      the PNG source images.
+    </p>
+  </page>
+  <page id="legal" name="legal" title="rfk86 // legal disclaimer">
+    <h>Legal Disclaimer</h>
+    <p>
+      This program is licensed under a garden-variety BSD license.  Legalese below.
+    </p>
+    <sep />
+    <p>
+      <em>Copyright (c) 2009, Heikki Kallasjoki</em><br />
+      <em>All rights reserved.</em>
+    </p>
+    <p>
+      Redistribution and use in source and binary forms, with or
+      without modification, are permitted provided that the following
+      conditions are met:<br />
+
+      * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following
+      disclaimer.<br />
+
+      * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.<br />
+
+      * The name of Heikki Kallasjoki may not be used to endorse or
+      promote products derived from this software without specific
+      prior written permission.
+      <span class="deem">  [How would that even work?]</span>
+    </p>
+    <p>
+      THIS SOFTWARE IS PROVIDED BY Heikki Kallasjoki ''AS IS'' AND ANY
+      EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+      THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+      PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL Heikki
+      Kallasjoki BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+      SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+      LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+      USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+      AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+      LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+      IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+      THE POSSIBILITY OF SUCH DAMAGE.
+    </p>
+  </page>
+  <header>
+    <![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+  <head>
+    <title>%TITLE%</title>
+    <link rel="stylesheet" type="text/css" href="rfk86.css" title="rfk86 style" />
+  </head>
+  <body>
+    <pre>
+    ]]>
+  </header>
+  <footer>
+    <![CDATA[
+    </pre>
+  </body>
+</html>
+    ]]>
+  </footer>
+</rfk>
