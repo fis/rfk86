@@ -36,7 +36,7 @@ $footer =~ s/^\s*(.*?)\s*$/$1/s;
 
 my $latest = `git describe --tags --always --abbrev=40`;
 
-if ($latest =~ /^(v[\d.]+)-/)
+if ($latest =~ /^(v[\d.]+)(?:$|-)/)
 {
     $latest = "$1.".`git rev-parse $1`;
     chomp $latest;
@@ -61,7 +61,7 @@ my $body_width = $total_width - $navbar_width - 3;
 
 foreach my $page (@pages)
 {
-    my $file = $page->att('id').'.html';
+    my $file = 'out/'.$page->att('id').'.html';
     open PAGE, '>:utf8', $file or die "can't write: $file: $!";
     my $oldout = select(PAGE);
 

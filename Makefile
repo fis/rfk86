@@ -6,9 +6,15 @@
 
 prog = rfk86
 
+rel := $(shell git describe --tags --always | sed -e 's/-.*//')
+rev := $(shell git rev-parse $(rel))
+
+relnum := $(patsubst v%,%,$(rel))
+pr := $(prog)-$(relnum)
+
 default: $(prog).86p
 
-.PHONY : default clean
+.PHONY : default clean web web-clean
 
 $(prog).86p: rfk86.asm messages.bin font.bin logo-1.bin victory.bin
 	./ti86asm.pl $<
@@ -29,3 +35,22 @@ clean:
 	$(RM) $(prog).86p $(prog).bin $(prog).sym
 	$(RM) messages.bin messages.inc huffman.inc
 	$(RM) font.bin logo-1.bin logo-2.bin victory.bin
+
+# website maintenance tasks, only for git checkouts
+
+ifdef rel
+
+web: $(prog).86p web-clean
+	mkdir -p web/out
+	(cd web ; ./build.pl)
+	cp $(prog).86p web/*.css web/*.png web/out/
+	git archive --format=tar --prefix=$(pr)/ $(rel) | tar x -C web/out
+	$(RM) -r web/out/$(pr)/web
+	sed -re 's/\.GIT {37}/.$(rev)/' < README.txt > web/out/$(pr)/README.txt
+	tar zcf web/out/$(pr).tar.gz -C web/out $(pr)
+	$(RM) -r web/out/$(pr)
+
+web-clean:
+	$(RM) -r web/out
+
+endif
