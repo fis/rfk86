@@ -4,6 +4,7 @@
     <navitem type="page" id="index" />
     <navitem type="page" id="news" />
     <navitem type="page" id="screens" />
+    <navitem type="page" id="faq" />
     <navitem type="page" id="devel" />
     <navitem type="page" id="legal" />
     <navitem type="sep" />
@@ -114,6 +115,26 @@
       the code, and a reasonable Perl installation to run the build
       scripts.  The <em>GD</em> Perl module is also needed, to convert
       the PNG source images.
+    </p>
+  </page>
+  <page id="faq" name="faq" title="rfk86 // frequently asked questions">
+    <h>Frequently Asked Questions [not really]</h>
+    <p>
+      No-one has asked me any questions, but here are some answers to
+      questions I could think of.
+    </p>
+    <sep />
+    <p><em>Why Does All The Text Look Horrible?</em></p>
+    <p>
+      If you happen to have a system that handles font embedding right
+      (or at least wrong the same way my system does), you may have
+      noticed that this website is rendered in the same font I made
+      for the game too.  There is no real reason for this.
+    </p>
+    <p>
+      Alternatively, it may be that your "monospace" font is not so
+      monospaced after all, and the Unicode line-drawing based site
+      layout looks broken.  Them's the breaks.
     </p>
   </page>
   <page id="legal" name="legal" title="rfk86 // legal disclaimer">

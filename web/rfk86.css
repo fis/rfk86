@@ -1,6 +1,18 @@
+@font-face {
+    font-family: "Rfk-Regular";
+    src: url("rfk86.eot");                                          /* IE */
+    src: local("Rfk-Regular"), url("rfk86.ttf") format("truetype"); /* not IE */
+}
+
 body {
     background-color: black;
     color: #444;
+}
+
+body, pre {
+    font-family: "Rfk-Regular", "Monaco", "DejaVu Sans Mono", monospace;
+    font-size: 12px;
+    line-height: 12px;
 }
 
 span.b, span.n {
@@ -8,7 +20,6 @@ span.b, span.n {
 }
 
 span.h {
-    font-weight: bold;
     color: #ddd;
     border-bottom: 2px solid #ddd;
 }
