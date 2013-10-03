@@ -8,7 +8,7 @@
     <navitem type="page" id="devel" />
     <navitem type="page" id="legal" />
     <navitem type="sep" />
-    <navitem type="link" title="git repo" url="http://git.zem.fi/rfk86/" />
+    <navitem type="link" title="git repo" url="https://github.com/fis/rfk86" />
     <navitem type="link" title="rfk home" url="http://robotfindskitten.org/" />
   </navbar>
   <page id="index" name="home" title="rfk86">
@@ -33,6 +33,9 @@
       very likely to work on a real calculator, but if it breaks, you
       have to fashion a modernist sculpture out of both pieces.
     </p>
+    <p>
+      (Or tell me and I'll try to fix it.)
+    </p>
     <sep />
     <h>Downloads</h>
     <p>
@@ -44,7 +47,7 @@
     </p>
     <p>
       For the latest word in TI-86 kitten-finding, see
-      the <a href="http://git.zem.fi/rfk86/">git repo.</a>
+      the <a href="https://github.com/fis/rfk86">git repo.</a>
     </p>
     <p>
       You may also peruse the <a href="legal.html">legal disclaimer.</a>

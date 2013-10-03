@@ -43,7 +43,7 @@ ifdef rel
 web: $(prog).86p web-clean
 	mkdir -p web/out
 	(cd web ; ./build.pl)
-	cp $(prog).86p web/rfk86.{css,ttf,eot} web/*.png web/out/
+	cp $(prog).86p web/rfk86.css web/rfk86.ttf web/rfk86.eot web/*.png web/out/
 	git archive --format=tar --prefix=$(pr)/ $(rel) | tar x -C web/out
 	$(RM) -r web/out/$(pr)/web
 	sed -re 's/\.GIT {37}/.$(rev)/' < README.txt > web/out/$(pr)/README.txt
